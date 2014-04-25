@@ -79,6 +79,13 @@ static int   bootchart_count;
 #define BOARD_CHARGING_CMDLINE_VALUE "true"
 #endif
 
+#ifdef STE_HARDWARE
+#ifndef BOARD_LPM_BOOT_ARGUMENT_NAME
+#define BOARD_LPM_BOOT_ARGUMENT_NAME "lpm_boot"
+#define BOARD_LPM_BOOT_ARGUMENT_VALUE "1"
+#endif
+#endif //STE_HARDWARE
+
 static char console[32];
 static char bootmode[32];
 static char hardware[32];
@@ -107,6 +114,10 @@ static time_t process_needs_restart;
 static const char *ENV[32];
 
 static unsigned emmc_boot = 0;
+
+#ifdef STE_HARDWARE
+static unsigned lpm_bootmode = 0;
+#endif
 
 static unsigned charging_mode = 0;
 
@@ -815,6 +826,12 @@ static void import_kernel_nv(char *name, int for_emulator)
             emmc_boot = 1;
         }
 #endif
+#ifdef STE_HARDWARE
+    } else if (!strcmp(name,BOARD_LPM_BOOT_ARGUMENT_NAME)) {
+        if (!strcmp(value,BOARD_LPM_BOOT_ARGUMENT_VALUE)) {
+            lpm_bootmode = 1;
+        }
+#endif
     } else if (!strcmp(name,BOARD_CHARGING_CMDLINE_NAME)) {
         strlcpy(battchg_pause, value, sizeof(battchg_pause));
     } else if (!strncmp(name, "androidboot.", 12) && name_len > 12) {
@@ -1066,7 +1083,11 @@ int audit_callback(void *data, security_class_t cls, char *buf, size_t len)
 static int charging_mode_booting(void)
 {
 #ifndef BOARD_CHARGING_MODE_BOOTING_LPM
-    return 0;
+#ifdef STE_HARDWARE
+    return lpm_bootmode;
+#else
+    return 0
+#endif //STE_HARDWARE
 #else
     int f;
     char cmb;
@@ -1079,7 +1100,7 @@ static int charging_mode_booting(void)
 
     close(f);
     return ('1' == cmb);
-#endif
+#endif //BOARD_CHARGING_MODE_BOOTING_LPM
 }
 
 static void selinux_initialize(void)
