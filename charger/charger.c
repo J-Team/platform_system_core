@@ -215,7 +215,11 @@ static int set_backlight(int toggle)
         }
         if (toggle) {
                 LOGI("Enabling backlight");
+#ifdef STE_HARDWARE
+                snprintf(buffer, sizeof(int), "%d\n", 255);
+#else
                 snprintf(buffer, sizeof(int), "%d\n", 100);
+#endif
         } else {
                 LOGI("Disabling backlight");
                 snprintf(buffer, sizeof(int), "%d\n", 0);
